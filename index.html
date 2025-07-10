@@ -590,18 +590,87 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  function generatePdfFromData(data) {
-    const element = document.getElementById("invoiceContainer");
-    if (!element) return;
-    const opt = {
-      margin: 0.5,
-      filename: `${data.invoiceNumber || 'Rekins'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+function generatePdfFromData(data) {
+  // Aizpilda datus no saņemtā payloada (Wix puses)
+  document.getElementById('cardInvNum').textContent = data.invoiceNumber || '';
+  document.getElementById('cardIssue').textContent = data.invoiceDate || '';
+  document.getElementById('cardDue').textContent = data.dueDate || '';
+  document.getElementById('cardInterest').textContent = data.interest || '–';
+  document.getElementById('finalCheckbox').checked = data.final || false;
+
+  // Piegādātājs
+  for (const key in data.supplier) {
+    const el = document.getElementById('sup' + key.charAt(0).toUpperCase() + key.slice(1));
+    if (el) el.textContent = data.supplier[key];
   }
+
+  // Saņēmējs
+  for (const key in data.recipient) {
+    const el = document.getElementById('rec' + key.charAt(0).toUpperCase() + key.slice(1));
+    if (el) el.textContent = data.recipient[key];
+  }
+
+  // Produkti
+  const container = document.getElementById('productsContainer');
+  container.innerHTML = ''; // Notīram vecos
+
+  data.products.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'd-flex border border-top-0 px-3 py-2 align-items-center product-row';
+    row.innerHTML = `
+      <input type="text" class="form-control me-3" value="${p.name}">
+      <select class="form-select me-3" style="width:100px;">
+        <option ${p.unit === 'gab' ? 'selected' : ''}>gab</option>
+        <option ${p.unit === 'm' ? 'selected' : ''}>m</option>
+        <option ${p.unit === 'h' ? 'selected' : ''}>h</option>
+      </select>
+      <input type="number" class="form-control me-3 text-center" style="width:80px;" value="${p.qty}">
+      <input type="number" class="form-control me-3 text-end" style="width:100px;" step="0.01" value="${p.price}">
+      <div class="text-center me-3 discount-col" style="width:100px; display:none;">
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control text-center" placeholder="0%" value="${p.discount || ''}">
+          <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown"></button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#">0%</a></li>
+            <li><a class="dropdown-item" href="#">5%</a></li>
+            <li><a class="dropdown-item" href="#">10%</a></li>
+            <li><a class="dropdown-item" href="#">20%</a></li>
+            <li><a class="dropdown-item" href="#">25%</a></li>
+            <li><a class="dropdown-item" href="#">50%</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="text-end" style="width:100px;">€ 0.00</div>
+    `;
+    container.appendChild(row);
+
+    const desc = document.createElement('div');
+    desc.className = 'd-flex border border-top-0 rounded-bottom px-3 py-2 align-items-center';
+    desc.innerHTML = `
+      <input type="text" class="form-control form-control-sm text-muted me-2 flex-grow-1" placeholder="Īss apraksts par šo rindu…">
+      <button type="button" class="btn btn-outline-danger btn-sm delete-row-btn" title="Delete">🗑</button>
+    `;
+    container.appendChild(desc);
+
+    // Recalculate
+    wireRecalc(row);
+    wireDelete(desc);
+  });
+
+  updateGrandTotal();
+
+  // Un tad ģenerē PDF
+  const element = document.getElementById("invoiceContainer");
+  if (!element) return;
+  const opt = {
+    margin: 0.5,
+    filename: `${data.invoiceNumber || 'Rekins'}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
 });
 </script>
 
