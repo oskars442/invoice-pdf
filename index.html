@@ -347,7 +347,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-  <script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
   // Final toggle
   document.getElementById('finalCheckbox').addEventListener('change', e => {
     document.getElementById('cardLabel').textContent =
@@ -510,11 +511,12 @@
     const sel    = document.getElementById(selectId);
     const custom = document.getElementById(customDivId);
     sel.addEventListener('change', () => {
-      custom.style.display = sel.value==='cits' ? '' : 'none';
+      custom.style.display = sel.value === 'cits' ? '' : 'none';
     });
-    custom.style.display = sel.value==='cits' ? '' : 'none';
+    custom.style.display = sel.value === 'cits' ? '' : 'none';
   }
-  toggleCustom('paymentType',     'paymentTypeCustom');
+
+  toggleCustom('paymentType', 'paymentTypeCustom');
   toggleCustom('transactionType', 'transactionTypeCustom');
 
   updateGrandTotal();
@@ -563,8 +565,10 @@
     window.parent.postMessage({ action: 'saveInvoice', data: invoiceData }, '*');
   });
 
-  function downloadPDF() {
+  // Lejupielāde ar klikšķi
+  document.getElementById("downloadBtn")?.addEventListener("click", () => {
     const element = document.getElementById("invoiceContainer");
+    if (!element) return;
     const opt = {
       margin: 0.5,
       filename: 'Rekins.pdf',
@@ -573,40 +577,34 @@
       jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();
-  }
+  });
 
+  // Apvienotais postMessage listeneris
   window.addEventListener('message', (event) => {
     if (event.data?.action === 'triggerPdfDownload') {
-      downloadPDF();
+      document.getElementById("downloadBtn")?.click();
+    } else if (event.data?.action === 'generatePdf') {
+      const data = event.data.data;
+      if (!data) return;
+      generatePdfFromData(data);
     }
   });
 
-  window.addEventListener('message', (event) => {
-  if (event.data?.action === 'generatePdf') {
-    const invoiceData = event.data.data;
-    if (!invoiceData) return;
-
-    // 🔽 Saglabā rēķina datus globāli vai uzreiz izveido PDF
-    console.log("✅ Saņemts rēķins no Wix lapas", invoiceData);
-
-    // automātiski izsauc lejupielādi
-    generatePdfFromData(invoiceData);
+  function generatePdfFromData(data) {
+    const element = document.getElementById("invoiceContainer");
+    if (!element) return;
+    const opt = {
+      margin: 0.5,
+      filename: `${data.invoiceNumber || 'Rekins'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
   }
 });
-
-function generatePdfFromData(data) {
-  const element = document.getElementById("invoiceContainer");
-  if (!element) return;
-  const opt = {
-    margin:       0.5,
-    filename:     `${data.invoiceNumber || 'Rekins'}.pdf`,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-  };
-  html2pdf().set(opt).from(element).save();
-}
 </script>
+
 
 </body>
 </html>
