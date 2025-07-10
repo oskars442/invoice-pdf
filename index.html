@@ -685,6 +685,19 @@ function downloadPDF() {
 
   html2pdf().set(opt).from(element).save();
 }
+
+window.addEventListener("message", (event) => {
+  const { action, data } = event.data || {};
+  if (action === 'generatePdf' && data) {
+    // Piemēram, aizpildi HTML ar datiem (ja vajag)
+    // renderInvoiceData(data); // ja tev ir tāda funkcija
+
+    // Pagaidi 1 sekundi, tad ģenerē PDF
+    setTimeout(() => {
+      html2pdf().from(document.body).save(`${data.invoiceNumber || 'invoice'}.pdf`);
+    }, 1000);
+  }
+});
 </script>
 
 
