@@ -580,6 +580,32 @@
       downloadPDF();
     }
   });
+
+  window.addEventListener('message', (event) => {
+  if (event.data?.action === 'generatePdf') {
+    const invoiceData = event.data.data;
+    if (!invoiceData) return;
+
+    // 🔽 Saglabā rēķina datus globāli vai uzreiz izveido PDF
+    console.log("✅ Saņemts rēķins no Wix lapas", invoiceData);
+
+    // automātiski izsauc lejupielādi
+    generatePdfFromData(invoiceData);
+  }
+});
+
+function generatePdfFromData(data) {
+  const element = document.getElementById("invoiceContainer");
+  if (!element) return;
+  const opt = {
+    margin:       0.5,
+    filename:     `${data.invoiceNumber || 'Rekins'}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2 },
+    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
 </script>
 
 </body>
