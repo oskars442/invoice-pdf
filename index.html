@@ -416,7 +416,6 @@
     let sum = 0;
     rows.forEach(r => {
       const txt = r.querySelector('.text-end:last-child').textContent;
-      // strip non-digits, convert comma→dot, parseFloat
       const num = parseFloat(txt.replace(/[^\d,]/g,'').replace(',','.')) || 0;
       sum += num;
     });
@@ -424,19 +423,14 @@
       style:'currency',currency:'EUR'
     }).format(sum);
     document.getElementById('grandTotal').textContent = formatted;
-    // optional words below
     document.getElementById('grandTotalWords').textContent =
-      sum === 0
-        ? 'nulle euro un 0 centi'
-        : formatted + ' kopā';
+      sum === 0 ? 'nulle euro un 0 centi' : formatted + ' kopā';
   }
 
-  // Wire recalc on each product-row
   function wireRecalc(row) {
     const [qty, price] = row.querySelectorAll('input[type="number"]');
     const disc = row.querySelector('.discount-col input');
     const totCell = row.querySelector('.text-end:last-child');
-
     function recalc() {
       let q = parseFloat(qty.value)||0,
           p = parseFloat(price.value.replace(',','.'))||0,
@@ -449,21 +443,16 @@
         style:'currency',currency:'EUR'
       }).format(t);
     }
-
     function recalcAll() {
       recalc();
       updateGrandTotal();
     }
-
     [qty, price, disc].filter(Boolean)
       .forEach(el => el.addEventListener('input', recalcAll));
     row.addEventListener('recalc', recalcAll);
-
-    // initial calc
     recalcAll();
   }
 
-  // Wire delete on description row
   function wireDelete(descRow) {
     const btn = descRow.querySelector('.delete-row-btn');
     if (!btn) return;
@@ -476,17 +465,14 @@
     });
   }
 
-  // Init existing rows
   document.querySelectorAll('.product-row').forEach(wireRecalc);
   document.querySelectorAll('#productsContainer > .border.rounded-bottom')
     .forEach(wireDelete);
 
-  // Prepare template for add-row
   const tpl = document.createElement('div');
   const r0 = document.querySelector('.product-row');
   tpl.append(r0.cloneNode(true), r0.nextElementSibling.cloneNode(true));
 
-  // Add-row handler
   document.getElementById('addRowBtn').addEventListener('click', () => {
     const newR = tpl.children[0].cloneNode(true),
           newD = tpl.children[1].cloneNode(true);
@@ -506,7 +492,6 @@
     const cont = document.getElementById('productsContainer');
     cont.append(newR, newD);
 
-    // re-wire discount dropdowns
     newR.querySelectorAll('.discount-col .dropdown-item').forEach(el => {
       el.addEventListener('click', e => {
         e.preventDefault();
@@ -521,30 +506,20 @@
     updateGrandTotal();
   });
 
-  // “Cits” custom-field toggles
   function toggleCustom(selectId, customDivId) {
     const sel    = document.getElementById(selectId);
     const custom = document.getElementById(customDivId);
     sel.addEventListener('change', () => {
       custom.style.display = sel.value==='cits' ? '' : 'none';
     });
-    // initial
     custom.style.display = sel.value==='cits' ? '' : 'none';
   }
   toggleCustom('paymentType',     'paymentTypeCustom');
   toggleCustom('transactionType', 'transactionTypeCustom');
 
-  // initial grand-total
   updateGrandTotal();
 
-
-
   document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
-    // Send message to parent (Wix site)
-    window.parent.postMessage({ action: 'redirectToInvoice' }, '*');
-  });
-
-document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
     const invoiceData = {
       invoiceNumber: document.getElementById('cardInvNum').textContent,
       invoiceDate: document.getElementById('cardIssue').textContent,
@@ -585,28 +560,27 @@ document.getElementById('saveInvoiceBtn').addEventListener('click', () => {
       total: document.getElementById('grandTotal').textContent
     };
 
-    // Nosūtīt Wix lapai
     window.parent.postMessage({ action: 'saveInvoice', data: invoiceData }, '*');
   });
 
   function downloadPDF() {
-  const element = document.getElementById("invoiceContainer"); // šis ir tas elements kurš satur visu rēķinu
-  const opt = {
-    margin:       0.5,
-    filename:     'Rekins.pdf',
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2 },
-    jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-  };
-
-  html2pdf().set(opt).from(element).save();
-}
-
-window.addEventListener('message', (event) => {
-  if (event.data?.action === 'triggerPdfDownload') {
-    downloadPDF(); // ✅ izsauc tavu jau eksistējošo lejupielādes funkciju
+    const element = document.getElementById("invoiceContainer");
+    const opt = {
+      margin: 0.5,
+      filename: 'Rekins.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
   }
-});
+
+  window.addEventListener('message', (event) => {
+    if (event.data?.action === 'triggerPdfDownload') {
+      downloadPDF();
+    }
+  });
 </script>
+
 </body>
 </html>
